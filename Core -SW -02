@@ -1,1 +1,44 @@
 
+Conf t
+hostname Core-SW02
+no spanning-tree vlan-id 4093
+vlan 100
+   name public-subnet
+vlan 4093
+   trunk group Core-SW02-SW01
+exit
+interface Port-Channel11
+   description Port channel to DMZ Switches
+   switchport trunk allowed vlan 100,4093
+   switchport mode trunk
+  mlag 11
+   
+exit
+interface Port-Channel13
+   description port channel between Core-SW02&Core-SW01
+   switchport trunk allowed vlan 100,4093
+   switchport mode trunk
+   switchport trunk group Core-SW02-SW01
+exit
+interface Ethernet2
+   channel-group 11 mode active
+
+interface Ethernet1
+   channel-group 11 mode active
+
+interface Ethernet3
+   channel-group 13 mode active
+
+interface Ethernet4
+   channel-group 13 mode active
+exit
+interface Vlan4093
+   description Vlan between Core switches
+   ip address 172.16.12.1/30
+exit
+
+mlag configuration
+   domain-id mlag-SW01-SW02
+   local-interface Vlan4093
+   peer-address 172.16.12.2
+   peer-link Port-Channel13
