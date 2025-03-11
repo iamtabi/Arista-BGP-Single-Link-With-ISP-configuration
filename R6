@@ -1,0 +1,48 @@
+Conf t
+hostname R6
+interface fastethernet 0/0
+ip address 172.16.3.1 255.255.255.0
+ip ospf  10 area 0.0.0.0
+no shutdown
+exit
+interface fastethernet 1/0
+ip address 192.168.4.2 255.255.255.0
+ ip ospf 10 area 0.0.0.0
+ no shut 
+exit
+
+interface fastethernet 2/0
+ip address 192.168.5.1 255.255.255.0
+ ip ospf 10 area 0.0.0.0
+ no shut 
+exit
+
+router bgp 6939
+ no bgp default ipv4-unicast
+neighbor 172.16.3.2 remote-as 20007
+ neighbor 192.168.4.1 remote-as 6939
+ neighbor 192.168.5.2 remote-as 6939
+address-family ipv4
+  network 192.168.4.0
+  network 192.168.5.0
+  neighbor 172.16.3.2 activate
+  neighbor 172.16.3.2 default-originate
+  neighbor 172.16.3.2 route-map GSHUT-IN in
+  neighbor 192.168.4.1 activate
+  neighbor 192.168.5.2 activate
+  
+ip community-list standard GSHUT permit 4294901760
+
+ip route 0.0.0.0 0.0.0.0 Null0
+
+
+ip prefix-list DEFAULT_ONLY seq 5 permit 0.0.0.0/0
+
+route-map DEFAULT_TO_SW2 permit 10
+ match ip address prefix-list DEFAULT_ONLY
+exit
+
+route-map GSHUT-IN permit 10
+ match community GSHUT
+ set local-preference 0
+route-map GSHUT-IN permit 20
