@@ -1,0 +1,33 @@
+Conf t
+hostname R7
+
+interface FastEthernet0/0
+ ip address 192.168.6.1 255.255.255.0
+ ip ospf 10 area 0.0.0.0
+no shut
+exit
+
+interface FastEthernet1/0
+ ip address 192.168.4.1 255.255.255.0
+ ip ospf 10 area 0.0.0.0
+no shut
+exit
+
+interface FastEthernet2/0
+ ip address 192.168.100.2 255.255.255.0
+ ip ospf 10 area 0.0.0.0
+no shut
+exit
+
+router bgp 6939
+ no bgp default ipv4-unicast
+ neighbor 192.168.4.2 remote-as 6939
+ neighbor 192.168.6.2 remote-as 6939
+ neighbor 192.168.100.1 remote-as 174
+ 
+ address-family ipv4
+  network 192.168.4.0
+  network 192.168.6.0
+  neighbor 192.168.4.2 activate
+  neighbor 192.168.6.2 activate
+  neighbor 192.168.100.1 activate
