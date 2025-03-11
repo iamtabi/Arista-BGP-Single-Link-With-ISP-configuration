@@ -1,1 +1,64 @@
+Conf t
+Ip routing
+hostname DMZ-SW-01
+no spanning-tree vlan-id 4094
+vlan 2
+name iBGP-connectivity
+vlan 4094
+   trunk group DMZ-SW01-SW02
+exit
+interface Port-Channel10
+   description Port channel to DMZ-SW02
+   switchport trunk allowed vlan 100,2,4094
+   switchport mode trunk
+   switchport trunk group DMZ-SW01-SW02
+
+interface Ethernet1
+   channel-group 10 mode active
+interface Ethernet2
+   channel-group 10 mode active
+interface Ethernet3
+   channel-group 10 mode active
+interface Ethernet6
+   no switchport
+   ip address 172.16.2.2/24
+interface Vlan2
+   ip address 20.20.20.1/24
+exit
+interface Vlan100
+   ip address 10.100.100.3/24
+   ip virtual-router address 10.100.100.1
+exit
+ip virtual-router mac-address 00:1c:73:00:09:99
+interface Vlan4094
+   description Vlan between DMZ switches
+   ip address 172.16.11.1/30
+exit
+ip prefix-list DEFAULT_ONLY seq 5 permit 0.0.0.0/0
+ip prefix-list Only-Public seq 10 permit 10.100.100.0/24
+
+mlag configuration
+   domain-id mlag-SW01-SW02
+   local-interface Vlan4094
+   peer-address 172.16.11.2
+   peer-link Port-Channel10
+exit
+route-map PRIMARY_ISP1 permit 10
+   match ip address prefix-list DEFAULT_ONLY
+   set local-preference 200
+exit
+route-map Only-Public permit 15
+   match ip address prefix-list Only-Public
+exit
+route-map iBGP permit 15
+   match ip address prefix-list DEFAULT_ONLY
+exit
+router bgp 20007
+   neighbor 20.20.20.2 remote-as 20007
+   neighbor 20.20.20.2 next-hop-self
+  neighbor 20.20.20.2 route-map iBGP in
+   neighbor 172.16.2.1 remote-as 174
+   neighbor 172.16.2.1 route-map PRIMARY_ISP1 in
+   neighbor 172.16.2.1 route-map Only-Public out
+   network 10.100.100.0/24
 
