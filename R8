@@ -1,0 +1,25 @@
+Conf t
+hostname R8
+interface FastEthernet0/0
+ ip address 192.168.6.2 255.255.255.0
+ ip ospf 10 area 0.0.0.0
+no shut
+exit
+interface FastEthernet2/0
+ ip address 192.168.5.2 255.255.255.0
+ ip ospf 10 area 0.0.0.0
+ no shut
+exit
+
+router bgp 6939
+ no bgp default ipv4-unicast
+ 
+ neighbor 192.168.5.1 remote-as 6939
+ neighbor 192.168.6.1 remote-as 6939
+ 
+ address-family ipv4
+  no synchronization
+  network 192.168.5.0
+  network 192.168.6.0
+  neighbor 192.168.5.1 activate
+  neighbor 192.168.6.1 activate
