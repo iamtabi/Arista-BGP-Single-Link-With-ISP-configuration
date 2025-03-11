@@ -1,26 +1,38 @@
 Conf t
 Ip routing
 hostname DMZ-SW02
-no spanning-tree vlan-id 4094
+
+!! Create Vlan 2 for IBGP between DMZ switches
 vlan 2
 name iBGP-connectivity
+
+!! Vlan 100 will be used for Public Subnet
 vlan 100
    name public-subnet
+
+!! Vlan 4094 will be used for MLAG between DMZ switches
 vlan 4094
    trunk group DMZ-SW01-SW02
 exit
+no spanning-tree vlan-id 4094
+
+!! Port Channel10 will be used between DMZ Switches
 interface Port-Channel10
    description port channel between  DMZ-SW02&Core-SW01
    switchport trunk allowed vlan 100,2,4094
    switchport mode trunk
    switchport trunk group DMZ-SW01-SW02
 exit
+
+!! Port Channel11 will be used between DMZ and Core Switches
 interface Port-Channel11
    description Port channel to Core Switches
    switchport trunk allowed vlan 100
    switchport mode trunk
    mlag 11
 exit
+
+!! Configure Interfaces
 interface Ethernet1
    channel-group 10 mode active
 exit
@@ -39,21 +51,26 @@ exit
 interface Ethernet6
    no switchport
    ip address 172.16.3.2/24
+
+!! Interface Vlan2 will be used for iBGP
 interface Vlan2
    ip address 20.20.20.2/24
 exit
+
+!! Interface Vlan100 will be acting as a Gateway 
 interface Vlan100
    ip address 10.100.100.4/24
    ip virtual-router address 10.100.100.1
 exit
+
 ip virtual-router mac-address 00:1c:73:00:09:99
+
+!! Interface Vlan4094 will be used for MLAG traffic
 interface Vlan4094
    description Vlan between DMZ switches
    ip address 172.16.11.2/30
-exit
-ip prefix-list DEFAULT_ONLY seq 5 permit 0.0.0.0/0
-ip prefix-list Only-Public seq 10 permit 10.100.100.0/24
 
+!! MLAG configurations
 mlag configuration
    domain-id mlag-SW01-SW02
    local-interface Vlan4094
@@ -61,14 +78,22 @@ mlag configuration
    peer-link Port-Channel10
 exit
 
+!! Configuring Prefix-list for public subnet and default route
+ip prefix-list DEFAULT_ONLY seq 5 permit 0.0.0.0/0
+ip prefix-list Only-Public seq 10 permit 10.100.100.0/24
 
+!! Configuring Route Map
 route-map SECONDARY_ISP2 permit 10
    match ip address prefix-list DEFAULT_ONLY
    set local-preference 100
+
 exit
 route-map iBGP permit 15
    match ip address prefix-list DEFAULT_ONLY
 exit
+
+!! Configuring BGP
+
 router bgp 20007
    neighbor 20.20.20.1 remote-as 20007
    neighbor 20.20.20.1 next-hop-self
@@ -81,3 +106,5 @@ router bgp 20007
 address-family ipv4
       neighbor 20.20.20.1 route-map iBGP in
       neighbor 20.20.20.1 default-originate
+
+
